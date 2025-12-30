@@ -1,36 +1,52 @@
 import express from "express";
 import cors from "cors";
-import "dotenv/config";
 import mongoose from "mongoose";
+import "dotenv/config";
+
 import chatRoutes from "./routes/chat.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
-import { getOpenAPIResponse } from "./utils/openai.js"; // fine to keep if used
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// ✅ 1. Middleware order matters
-app.use(cors()); // use BEFORE routes
+/* -------------------- MONGOOSE CONFIG -------------------- */
+mongoose.set("bufferCommands", false);
+
+/* -------------------- MIDDLEWARE -------------------- */
+app.use(cors());
 app.use(express.json());
 
-// ✅ 2. Routes
+/* -------------------- ROUTES -------------------- */
 app.use("/api", chatRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", userRoutes);
 
-// ✅ 3. Connect DB before listening
-const connectDB = async () => {
+app.get("/test", (req, res) => {
+  res.send("Server is working fine");
+});
+
+/* -------------------- START SERVER -------------------- */
+const startServer = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("✅ Connected to MongoDB");
+    if (!process.env.MONGODB_URI) {
+      throw new Error("MONGODB_URI is not defined in .env");
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    console.log("Connected to MongoDB");
+
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
   } catch (err) {
-    console.error("❌ DB connection failed:", err.message);
+    console.error("Database connection failed:", err.message);
+    process.exit(1);
   }
 };
 
-// ✅ 4. Start server after DB connection
-app.listen(PORT, async () => {
-  await connectDB();
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+startServer();
