@@ -9,7 +9,7 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -24,5 +24,6 @@ jobs:
       - name: Build project
         run: npm run build --if-present
 
-      - name: Restart backend service
-        run: pm2 restart backend
+      - name: Deploy with PM2
+        run: |
+          pm2 restart backend || pm2 start server.js --name backend
